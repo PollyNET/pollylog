@@ -1,0 +1,78 @@
+@import './antd.min.css';
+@font-face {
+  font-family: 'anticon';
+  src: url('../icon/iconfont.eot'); /* IE9*/
+  src: url('../icon/iconfont.woff') format('woff'), /* chrome、firefox、opera、Safari, Android, iOS 4.2+*/
+  url('../icon/iconfont.ttf') format('truetype'), /* iOS 4.1- */
+  url('../icon/iconfont.svg#iconfont') format('svg');
+}
+
+h1.myheader {
+    font: 20px sans-serif;
+    font-weight: 900;
+    text-align: center;
+    color: springgreen;
+}
+
+
+#editor {
+    width: 65%;
+    margin: auto;
+}
+
+#tablecontainer {
+    margin: auto;
+    width: 70%;
+    min-width: 950px;
+    /*border: 3px solid green;*/
+    padding: 10px;
+    font: 13px sans-serif;
+}
+
+table {
+    border-collapse:collapse;
+    width:auto;
+}
+
+table#editorleft td {
+    padding: 5px;
+}
+
+#entry-list td:last-child {
+    width:100%;
+}
+
+#entry-list td {
+    padding: 7px;
+    white-space:nowrap;
+}
+
+#entry-list tr:nth-child(odd) {
+    background: #CCC;
+}
+#entry-list tr:nth-child(even) {
+    background: #FFF;
+}
+
+th {
+    padding: 7px;
+    background: #FFF;
+}
+
+div.footer {
+    width: 65%;
+    margin-right: auto;
+    margin-left: auto;
+    min-width: 900px;
+    font-size: 10px;
+    color: grey;
+    margin-top: 5px;
+}
+
+.footer-left {
+    float: left;
+}
+
+.footer-right {
+    float: right;  
+}

@@ -1,0 +1,6 @@
+"id";"time";"operator";"changes";"ndfilters";"comment"
+6;"20190121-1731";["hb"];[];{};"just wanted to leave a comment"
+5;"20190114-1730";["re"];[];{};"restarted polly.exe"
+4;"20190107-0334";["mr" "bb"];["pulsepower" "windowwipe"];{};"cleaned window"
+3;"20190101-0157";["nn"];["flashlamps" "overlap"];{1 1.2, 2 3.9, 6 0.9};"initial setup"
+7;"20160823-0000";["nn"];[];{};"manufactured"
