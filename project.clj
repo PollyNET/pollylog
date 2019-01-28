@@ -1,4 +1,4 @@
-(defproject pollylog "0.1.1"
+(defproject pollylog "0.1.2"
   :description "fixed format logbook for pollyxt lidars"
   :url "http://polly.tropos.de"
   :license {:name "MIT"
@@ -27,13 +27,13 @@
   ; used the gadfly template https://github.com/gadfly361/reagent-figwheel   
   :min-lein-version "2.5.3"
   :plugins [[lein-cljsbuild "1.1.4"]]
-  :clean-targets ^{:protect false} ["resources/public/js"
+  :clean-targets ^{:protect false} ["resources/public/js/"
                                     "target"]
   :figwheel {:css-dirs ["resources/public/css"]
              :server-port 3450
              :nrepl-port 7888}
 
-  :profiles {:uberjar {:aot :all}
+  :profiles {:uberjar {:aot :all :auto-clean false}
               :dev
               {:dependencies [[figwheel-sidecar "0.5.16"]
                               [cider/piggieback "0.3.1"]

@@ -30,7 +30,8 @@
                  :channels {}}))
 
 (def all-changes {"overlap" "Ơ" "windowwipe" "🚿" ;"⚆"
-                  "flashlamps" "💡" "pulsepower" "⚡"})
+                  "flashlamps" "💡" "pulsepower" "⚡"
+                  "restarted" "↻"})
 
 ; (def channels {1 "355" 2 "355c" 3 "387" 4 "407"
 ;                5 "532" 6 "532c" 7 "607" 8 "1064"
