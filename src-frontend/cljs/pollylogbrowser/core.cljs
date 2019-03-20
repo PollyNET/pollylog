@@ -158,6 +158,18 @@
        ^{:key (get entry "id")} [entry-in-list entry])]]])
 
 
+(defn parse-number-nan [str]
+ (if (> (count str) 0)
+   (cstr/parse-number str)
+   nil))
+
+(defn update-or-remove-nd-filters [path no]
+  (fn [value]
+    (if value
+      (swap! app-state assoc-in (conj path no) value)
+      (swap! app-state assoc-in path (dissoc (get-in @app-state path) no)))))
+
+
 ;; table for the nd filters
 (defn nd-entry [] 
  (fn [no]
@@ -166,7 +178,7 @@
       no "   " [:b (get-in @app-state [:channels no])] ":  "
       [ant/input {:size "small" :style {:width "40px" :text-align "right"} 
                   :value (get-in @app-state [:entry-mod "ndfilters" no]) 
-                  :onChange #(swap! app-state assoc-in [:entry-mod "ndfilters" no] (js->clj (cstr/parse-number (.. % -target -value))))}]]
+                  :onChange #((update-or-remove-nd-filters [:entry-mod "ndfilters"] no) (js->clj (parse-number-nan (.. % -target -value))))}]]
      [:td ""])))
 
 (defn make-filter-table []
@@ -179,10 +191,11 @@
      
 
 ; the editor for a single entry
-(defn editor [app-state]
+(defn editor []
   [:div#editor {:style {:min-width "950px"}} 
    ;[ant/button {:on-click #(swap! app-state update-in [:ed-visible] not)} "toggle ed"]
    ;[ant/button {:on-click push-to-backend} "push"]
+   ^{:key (get-in @app-state [:entry-mod "id"])}
    [ant/collapse {:defaultActiveKey "" :activeKey (if (get-in @app-state [:ed-visible]) "1" "") :bordered false}
     [ant/collapse-panel {:header "" :key "1" :showArrow false :disables true}
      [ant/row
@@ -211,9 +224,11 @@
        [:div {:style {:padding "7px"}}]
        [ant/row {:align "top"}
         [ant/col {:span 3} "Comment "]
-        [ant/col {:span 21} [ant/input-text-area {:rows 2 :style {:width "100%"}
-                                                  :value (get-in @app-state [:entry-mod "comment"])
-                                                  :onChange #(swap! app-state assoc-in [:entry-mod "comment"] (js->clj (.. % -target -value)))}]]]
+        [ant/col {:span 21} [ant/input-text-area
+                             {:rows 2 :style {:width "100%"}
+                              ; use default value else there is a wired rerender
+                              :default-value (get-in @app-state [:entry-mod "comment"])
+                              :onChange #(swap! app-state assoc-in [:entry-mod "comment"] (js->clj (.. % -target -value)))}]]]
        [:div {:style {:padding "7px"}}]
        [ant/row {:span 3 :offset 21 :type "flex" :justify "end"}
         [ant/button {:type "danger" :on-click #(swap! app-state assoc-in [:ed-visible] false)} "dismiss"]
@@ -223,13 +238,13 @@
         ;[ant/button {:on-click #(reset! modal1 true)} "list corresp. nodes"]
        
 (defn footer []
- [:div.footer [:div.footer-left "by radenz_at_tropos.de  -  visit  " [:a {:href "http://polly.tropos.de"} "polly.tropos.de"]] 
+ [:div.footer [:div.footer-left "by radenz_at_tropos.de  -  visit  " [:a {:href "http://polly.tropos.de"} "polly.tropos.de"] "  0.1.3"] 
   [:div.footer-right {:on-click push-to-backend} "status: " (get @app-state :status)]])
 
 (defn page []
   [:div
    [:h1.myheader "polly logbook"]
-   [editor app-state]
+   [editor]
    [list-entries]
    ;[:br] @app-state
    [footer]])

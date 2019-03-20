@@ -27,7 +27,7 @@ lein clean
 lein cljsbuild once min
 # pack into .jar file
 lein uberjar
-# copy the uberjar to to `pollylog_produciton` and zip
+# copy the uberjar to to `pollylog_production` and zip
 cp .\target\uberjar\pollylog-*-standalone.jar .\pollylog_production\
 ...
 ```
