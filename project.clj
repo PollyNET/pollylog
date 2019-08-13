@@ -1,4 +1,4 @@
-(defproject pollylog "0.1.3"
+(defproject pollylog "0.1.4"
   :description "fixed format logbook for pollyxt lidars"
   :url "http://polly.tropos.de"
   :license {:name "MIT"
@@ -33,7 +33,7 @@
              :server-port 3450
              :nrepl-port 7888}
 
-  :profiles {:uberjar {:aot :all :auto-clean false}
+  :profiles {:uberjar {:aot :all :auto-clean true :prep-tasks ["compile" ["cljsbuild" "once" "min"]]}
               :dev
               {:dependencies [[figwheel-sidecar "0.5.16"]
                               [cider/piggieback "0.3.1"]

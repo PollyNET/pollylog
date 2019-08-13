@@ -58,8 +58,9 @@
   (map read-string lst))
 
 (defn keys-to-int [hashmap]
-  (into {} (for [[k v] hashmap] [(Integer/parseInt k) v])))
+  (into (sorted-map) (for [[k v] hashmap] [(Integer/parseInt k) v])))
 
+;(into (sorted-map) {:a 2 :b 1})
 (defn decode-from-json [elem]
   (into {} (for [[k v] elem] [k (if (= k "ndfilters") (keys-to-int v) v)])))
 

@@ -50,6 +50,10 @@
 
   ;(swap! app-state assoc :all-pieces pcs)
 
+(defn http-error-handler [{:keys [status status-text]}]
+  (ant/notification-error {:message "Error" :duration 0 :description "while fetching data, have a look into the terminal and report to polly (at) tropos.de"})
+  (.log js/console (str "Error occured: " status " " status-text)))
+
 (defn new-empty-entry [] 
  {"id" (inc (or (apply max (keys (get @app-state :entries))) 0))
   "time" (-> (js/moment) (.utc) (.format "YYYYMMDD-HHmm"))
@@ -70,7 +74,8 @@
 (defn fetch-channels []
   (ajax/GET (str "http://localhost:" (get-port) "/channelnames")
     {:with-credentials false
-     :handler #(swap! app-state assoc-in [:channels] (keys-to-int %))}))
+     :handler #(swap! app-state assoc-in [:channels] (keys-to-int %))
+     :error-handler http-error-handler}))
 
 (fetch-channels)
 
@@ -83,7 +88,7 @@
   (swap! app-state assoc-in [:status] "pulling..")
   (ajax/GET (str "http://localhost:" (get-port) "/entries") 
    {:with-credentials false
-    :handler fetch-handler}))
+    :handler fetch-handler :error-handler http-error-handler}))
 
 (fetch-entries)
 
@@ -124,8 +129,18 @@
    (swap! app-state assoc-in [:ed-visible] false)
    (push-to-backend)))
    
- 
+(defn check-valid []
+ (if (string/includes? (get-in @app-state [:entry-mod "comment"]) ";") 
+   (do (ant/notification-error {:message "Error" :description (str "; not valid in comment")}) false) 
+   true))
 
+(defn dict-to-string [d]
+ (string/join " " (map #(str "<b>" (first %) ":</b> " (second %)) d)))
+
+(defn format-ndfilters [ndsettings]
+  (if (> (count (keys ndsettings)) 3)
+    (string/join "<br />" (map #(dict-to-string (into {} %)) (partition 3 3 nil (vec ndsettings))))
+   (dict-to-string ndsettings)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page
@@ -141,8 +156,8 @@
     [:td (get entry "time")]
     [:td (string/join " " (get entry "operator"))]
     [:td (string/join " " (map (partial get all-changes) (get entry "changes")))]
-    [:td (str (get entry "ndfilters"))]
-    [:td (get entry "comment")]]))
+    [:td {:dangerouslySetInnerHTML {:__html (format-ndfilters (get entry "ndfilters"))}}]
+    [:td {:dangerouslySetInnerHTML {:__html (string/replace (get entry "comment") #"\n" "<br />")}}]]))
 
 (defn thead []
  [:tr [:th [ant/button {:on-click edit-new-entry :size "small"} "+"]] 
@@ -233,12 +248,12 @@
        [ant/row {:span 3 :offset 21 :type "flex" :justify "end"}
         [ant/button {:type "danger" :on-click #(swap! app-state assoc-in [:ed-visible] false)} "dismiss"]
         [:div {:style {:width "5px"}}]
-        [ant/button {:type "primary" :on-click save} "save"]]]]]]])
+        [ant/button {:type "primary" :on-click save :disabled (not (check-valid))} "save"]]]]]]])
            
         ;[ant/button {:on-click #(reset! modal1 true)} "list corresp. nodes"]
        
 (defn footer []
- [:div.footer [:div.footer-left "by radenz_at_tropos.de  -  visit  " [:a {:href "http://polly.tropos.de"} "polly.tropos.de"] "  0.1.3"] 
+ [:div.footer [:div.footer-left "by martin-rdz  -  visit  " [:a {:href "http://polly.tropos.de"} "polly.tropos.de"] "  0.1.4"] 
   [:div.footer-right {:on-click push-to-backend} "status: " (get @app-state :status)]])
 
 (defn page []
