@@ -59,6 +59,12 @@ th {
     background: #FFF;
 }
 
+#entry-list td.comment {
+    white-space: normal;
+    /*word-break: break-all;
+    overflow-wrap: break-word;*/
+}
+
 div.footer {
     width: 65%;
     margin-right: auto;
@@ -67,6 +73,7 @@ div.footer {
     font-size: 10px;
     color: grey;
     margin-top: 5px;
+    padding-bottom: 35px;
 }
 
 .footer-left {
@@ -76,3 +83,18 @@ div.footer {
 .footer-right {
     float: right;  
 }
+
+
+div.more {
+    text-align: center;
+}
+
+/*div.more > span {
+    margin-left: 5px;
+    margin-right: 5px;
+}
+div.more > span:hover {
+    text-align: center;
+    color: dodgerblue;
+    cursor: pointer;
+}*/

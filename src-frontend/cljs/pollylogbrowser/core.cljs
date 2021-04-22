@@ -20,6 +20,7 @@
 (defonce app-state
   (reagent/atom {:ed-visible false
                  :status "none"
+                 :dispentry 40
                  :entry-mod {"time" "20121213-0144"
                              "id" 5
                              "operator" ["am"]
@@ -69,7 +70,8 @@
 
 
 (defn map-from-vector [v]
- (apply hash-map (interleave (map #(get % "id") v) v)))
+  ; (println "map-from-vector " (map keys v))
+  (apply hash-map (interleave (map #(get % "id") v) v)))
 
 (defn fetch-channels []
   (ajax/GET (str "http://localhost:" (get-port) "/channelnames")
@@ -80,6 +82,7 @@
 (fetch-channels)
 
 (defn fetch-handler [data]
+  ; (println "data" data)
   (swap! app-state assoc-in [:entries] (map-from-vector (mapv remove-escapes data)))
   (swap! app-state assoc-in [:status] "pull finished"))
 
@@ -145,32 +148,42 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page
 
-(defn entry-in-list []
+(defn entry-in-list 
+  "function that returns html for an `entry`"
+  []
   (fn [entry]
     ;(js/console.log entry)
     ;(js/console.log "operator " (get entry "operator") (type (get entry "operator")))
     ;(js/console.log "ndfilters " (get-in entry ["ndfilters"]))
-   [:tr
-    [:td [ant/button {:on-click (edit-entry-builder (get entry "id")) :size "small" } "✎"] 
-     " " [ant/button {:on-click (del-entry-builder (get entry "id")) :size "small" :type "danger"} "x"]]
-    [:td (get entry "time")]
-    [:td (string/join " " (get entry "operator"))]
-    [:td (string/join " " (map (partial get all-changes) (get entry "changes")))]
-    [:td {:dangerouslySetInnerHTML {:__html (format-ndfilters (get entry "ndfilters"))}}]
-    [:td {:dangerouslySetInnerHTML {:__html (string/replace (get entry "comment") #"\n" "<br />")}}]]))
+    ; (println "id?" (get entry "time") (get entry "id"))
+    [:tr
+      [:td [ant/button {:on-click (edit-entry-builder (get entry "id")) :size "small" } "✎"] 
+       " " [ant/button {:on-click (del-entry-builder (get entry "id")) :size "small" :type "danger"} "x"]]
+      [:td (get entry "time")]
+      [:td (string/join " " (get entry "operator"))]
+      [:td (string/join " " (map (partial get all-changes) (get entry "changes")))]
+      [:td {:dangerouslySetInnerHTML {:__html (format-ndfilters (get entry "ndfilters"))}}]
+      [:td.comment {:dangerouslySetInnerHTML {:__html (string/replace (get entry "comment") #"\n" "<br />")}}]]))
 
 (defn thead []
  [:tr [:th [ant/button {:on-click edit-new-entry :size "small"} "+"]] 
   [:th "Time"] [:th "Operator"] [:th "Changes"] [:th "ND Filters"] [:th "Comment"]])
 
 
+(defn sorted-subsetted 
+  "" 
+  [entries beg end]
+  ;(println beg end (min end (count entries)))
+  (subvec (vec (sort-by #(get % "time") > (vals entries))) beg (min end (count entries))))
+ 
+
 (defn list-entries []
   [:div#tablecontainer
    [:table#entry-list
     [:thead [thead]]
     [:tbody
-     (for [entry (sort-by #(get % "time") > (vals (get-in @app-state [:entries])))]
-       ^{:key (get entry "id")} [entry-in-list entry])]]])
+     (doall (for [entry (sorted-subsetted (get-in @app-state [:entries]) 0 (get-in @app-state [:dispentry]))]
+              ^{:key (get entry "id")} [entry-in-list entry]))]]])
 
 
 (defn parse-number-nan [str]
@@ -196,73 +209,110 @@
                   :onChange #((update-or-remove-nd-filters [:entry-mod "ndfilters"] no) (js->clj (parse-number-nan (.. % -target -value))))}]]
      [:td ""])))
 
-(defn make-filter-table []
-   [:table [:thead] 
-    [:tbody
+(defn make-filter-table 
+  "make the table with the filter edit fields"
+  []
+  (fn []
+   (if (< (count (get @app-state :channels)) 14)
+    [:table [:thead] 
+      [:tbody
      ;[:tr (for [no (range 1 5)] ^{:key no} (if (contains? (get @app-state :channels) no) [nd-entry no] [:td]))]
-     [:tr (for [no (range 1 5)] ^{:key no} [nd-entry no])]
-     [:tr (for [no (range 5 9)] ^{:key no} [nd-entry no])]
-     [:tr (for [no (range 9 14)] ^{:key no} [nd-entry no])]]])
+       [:tr (for [no (range 1 5)] ^{:key no} [nd-entry no])]
+       [:tr (for [no (range 5 9)] ^{:key no} [nd-entry no])]
+       [:tr (for [no (range 9 14)] ^{:key no} [nd-entry no])]]]
+    [:table [:thead] 
+      [:tbody
+       [:tr (for [no (range 1 5)] ^{:key no} [nd-entry no])]
+       [:tr (for [no (range 5 9)] ^{:key no} [nd-entry no])]
+       [:tr (for [no (range 9 13)] ^{:key no} [nd-entry no])]
+       [:tr (for [no (range 13 17)] ^{:key no} [nd-entry no])]]])))
      
-
-; the editor for a single entry
-(defn editor []
+    
+(defn editor 
+  "editor for a single entry"
+  []
   [:div#editor {:style {:min-width "950px"}} 
    ;[ant/button {:on-click #(swap! app-state update-in [:ed-visible] not)} "toggle ed"]
    ;[ant/button {:on-click push-to-backend} "push"]
    ^{:key (get-in @app-state [:entry-mod "id"])}
-   [ant/collapse {:defaultActiveKey "" :activeKey (if (get-in @app-state [:ed-visible]) "1" "") :bordered false}
-    [ant/collapse-panel {:header "" :key "1" :showArrow false :disables true}
-     [ant/row
-      [ant/col {:span 8}
-       [:table#editorleft [:thead]
-        [:tbody
-         [:tr [:td "Time"]
-          [:td [ant/date-picker {:format "YYYYMMDD-HHmm" :value (js/moment (get-in @app-state [:entry-mod "time"]) "YYYYMMDD-HHmm")
-                                 :on-change (fn [_ d] (swap! app-state assoc-in [:entry-mod "time"] d))
-                                 :style {:width "100%"} :show-today false :size "small"
-                                 :showTime {:use12Hours false :format "HH:mm"}}]]]
-         [:tr [:td "Operator"]
-          [ant/tooltip {:title "select from list or type" :placement "right"}
-           [:td [ant/select {:mode "tags" :tokenSeparators ["," " "]
-                             :value (get-in @app-state [:entry-mod "operator"])
-                             :onChange #(swap! app-state assoc-in [:entry-mod "operator"] (js->clj %))
-                             :style {:width "200px"}}
-                 (for [no (all-past-operators app-state)] ^{:key no} [ant/select-option {:value no} no])]]]]
-         [:tr
-          [:td {:style {:vertical-align "top"}} "Changes"]
-          [:td [ant/checkbox-group {:value (get-in @app-state [:entry-mod "changes"])
-                                    :onChange  #(swap! app-state assoc-in [:entry-mod "changes"] (js->clj %))}
-                (for [no (keys all-changes)] ^{:key no} [ant/row [ant/checkbox {:value no} no]])]]]]]]
-      [ant/col {:span 16}
-       [ant/row [make-filter-table app-state]]
-       [:div {:style {:padding "7px"}}]
-       [ant/row {:align "top"}
-        [ant/col {:span 3} "Comment "]
-        [ant/col {:span 21} [ant/input-text-area
-                             {:rows 2 :style {:width "100%"}
+    [ant/collapse {:defaultActiveKey "" :activeKey (if (get-in @app-state [:ed-visible]) "1" "") :bordered false}
+      [ant/collapse-panel {:header "" :key "1" :showArrow false :disables true}
+       [ant/row
+        [ant/col {:span 8}
+         [:table#editorleft [:thead]
+          [:tbody
+           [:tr [:td "Time"]
+            [:td [ant/date-picker {:format "YYYYMMDD-HHmm" :value (js/moment (get-in @app-state [:entry-mod "time"]) "YYYYMMDD-HHmm")
+                                   :on-change (fn [_ d] (swap! app-state assoc-in [:entry-mod "time"] d))
+                                   :style {:width "100%"} :show-today false :size "small"
+                                   :showTime {:use12Hours false :format "HH:mm"}}]]]
+           [:tr [:td "Operator"]
+            [ant/tooltip {:title "select from list or type" :placement "right"}
+             [:td [ant/select {:mode "tags" :tokenSeparators ["," " "]
+                               :value (get-in @app-state [:entry-mod "operator"])
+                               :onChange #(swap! app-state assoc-in [:entry-mod "operator"] (js->clj %))
+                               :style {:width "200px"}}
+                   (for [no (all-past-operators app-state)] ^{:key no} [ant/select-option {:value no} no])]]]]
+           [:tr
+            [:td {:style {:vertical-align "top"}} "Changes"]
+            [:td [ant/checkbox-group {:value (get-in @app-state [:entry-mod "changes"])
+                                      :onChange  #(swap! app-state assoc-in [:entry-mod "changes"] (js->clj %))}
+                  (for [no (keys all-changes)] ^{:key no} [ant/row [ant/checkbox {:value no} no]])]]]]]]
+        [ant/col {:span 16}
+         [ant/row [make-filter-table app-state]]
+         [:div {:style {:padding "7px"}}]
+         [ant/row {:align "top"}
+          [ant/col {:span 3} "Comment "]
+          [ant/col {:span 21} [ant/input-text-area
+                               {:rows 2 :style {:width "100%"}
                               ; use default value else there is a wired rerender
-                              :default-value (get-in @app-state [:entry-mod "comment"])
-                              :onChange #(swap! app-state assoc-in [:entry-mod "comment"] (js->clj (.. % -target -value)))}]]]
-       [:div {:style {:padding "7px"}}]
-       [ant/row {:span 3 :offset 21 :type "flex" :justify "end"}
-        [ant/button {:type "danger" :on-click #(swap! app-state assoc-in [:ed-visible] false)} "dismiss"]
-        [:div {:style {:width "5px"}}]
-        [ant/button {:type "primary" :on-click save :disabled (not (check-valid))} "save"]]]]]]])
+                                :default-value (get-in @app-state [:entry-mod "comment"])
+                                :onChange #(swap! app-state assoc-in [:entry-mod "comment"] (js->clj (.. % -target -value)))}]]]
+         [:div {:style {:padding "7px"}}]
+         [ant/row {:span 3 :offset 21 :type "flex" :justify "end"}
+          [ant/button {:type "danger" :on-click #(swap! app-state assoc-in [:ed-visible] false)} "dismiss"]
+          [:div {:style {:width "5px"}}]
+          [ant/button {:type "primary" :on-click save :disabled (not (check-valid))} "save"]]]]]]])
            
         ;[ant/button {:on-click #(reset! modal1 true)} "list corresp. nodes"]
        
-(defn footer []
- [:div.footer [:div.footer-left "by martin-rdz  -  visit  " [:a {:href "http://polly.tropos.de"} "polly.tropos.de"] "  0.1.4"] 
-  [:div.footer-right {:on-click push-to-backend} "status: " (get @app-state :status)]])
+
+(defn inc-disp []
+  ;(swap! a update-in [(keyword id) :counter] inc))
+  ;(swap! app-state assoc-in [:dispentry] 300)
+  (swap! app-state update-in [:dispentry] #(+ % 50)))
+
+(defn dec-disp []
+  (swap! app-state update-in [:dispentry] #(- % 50)))
+
+(defn disp-more 
+  "" [] 
+  [:div.more 
+    ;[:span "less"]
+    ;[:span "display older..."]
+    [ant/button {:on-click dec-disp 
+                 :disabled (> 50 (get @app-state :dispentry))} 
+                "less"]
+    [:span " " (min (get @app-state :dispentry) (count (get-in @app-state [:entries]))) 
+           " out of " (count (get-in @app-state [:entries])) " entries "]
+    [ant/button {:on-click inc-disp 
+                 :disabled (< (count (get-in @app-state [:entries])) (get @app-state :dispentry))} 
+                "more"]])
+
+(defn footer 
+  "footer with the link, version and transmit status"
+  []
+  [:div.footer [:div.footer-left "by martin-rdz  -  visit  " [:a {:href "http://polly.tropos.de"} "polly.tropos.de"] "  pollylog v0.1.5"] 
+    [:div.footer-right {:on-click push-to-backend} "status: " (get @app-state :status)]])
 
 (defn page []
   [:div
-   [:h1.myheader "polly logbook"]
-   [editor]
-   [list-entries]
-   ;[:br] @app-state
-   [footer]])
+    [:h1.myheader "polly logbook"]
+    [editor]
+    [list-entries]
+    [disp-more]
+    ;[:br] @app-state
+    [footer]])
 
 
 

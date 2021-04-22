@@ -53,8 +53,7 @@
 ;(save-entries "../testlogbook.csv" entries)
 
 (defn convert-entry [lst]
-  (println "convert entry")
-  (println (map type lst) lst)
+  ; (println "convert entry" (map type lst) lst)
   (map read-string lst))
 
 (defn keys-to-int [hashmap]
@@ -66,6 +65,7 @@
 
 
 (defn csv-data->maps [csv-data]
+  ; (println (map str (first csv-data)))
   (map zipmap
     (repeat (first csv-data)) ;; First row is the header
     (map convert-entry (rest csv-data))))
@@ -83,6 +83,7 @@
 
 (defn list-entries [req]
   (pp/pprint req)
+  ;(println "load entries" (load-entries logbookfilename))
   {:status  200
    :headers {"Content-Type" "application/json"}
    :body    (json/write-str (load-entries logbookfilename))})
