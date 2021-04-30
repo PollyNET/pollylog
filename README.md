@@ -14,6 +14,19 @@ Adapt the port, filename and channels in the `config.json` file.
 
 Following an update it might be necessary to clear the cache of the local browser.
 
+
+## Update to new version
+
+1. Get the `pollylog_*.zip` from the releases page.
+2. End the running process by closing the terminal window.
+3. Place the `start.bat` and the `pollylog-*.jar` into your pollylog folder (the only thing that changes in the `.bat` is the version number).
+4. Do **not** change the `config.json`, if the channels, output file or port have not changed. 
+5. Run the `start.bat`. The name of the new `.jar` file should show up in the first line in the terminal.
+6. Reload the page in the browser, sometimes a hard-refresh (`Ctrl+F5`) is required. The version number is displayed on the bottom left of the page.
+
+![pollylog screenshot](./example.jpg)
+
+
 ## development
 The development setup requires leinigen: <https://leiningen.org/>
 
