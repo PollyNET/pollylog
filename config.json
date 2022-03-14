@@ -1,6 +1,8 @@
 {"port": 31514,
     
- "logbookfilename": "pollylog_production/logbook_pollylacros.csv",
+ "__logbookfilename": "pollylog_production/logbook_pollylacros.csv",
+ "logbookfilename": "pollylog_production/logbook_example.csv",
+ "dbfilename": "pollylog_production/logbook_example.db",
 
  "channels": {
     "1":"355", "2":"355c", "3":"387", "4":"407",

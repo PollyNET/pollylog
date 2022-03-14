@@ -1,6 +1,7 @@
 {"port": 31514,
     
  "logbookfilename": "logbook_example.csv",
+ "dbfilename": "logbook_example.db",
 
  "channels": {
     "1":"355", "2":"355c", "3":"387", "4":"407",

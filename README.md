@@ -56,4 +56,4 @@ cp .\target\uberjar\pollylog-*-standalone.jar .\pollylog_production\
 ```
 
 ## License
-Copyright 2021, Martin Radenz, MIT License
+Copyright 2022, Martin Radenz, MIT License

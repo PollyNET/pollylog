@@ -1,1 +1,1 @@
-java -jar .\pollylog-0.1.5-standalone.jar
+java -jar .\pollylog-0.1.6-standalone.jar

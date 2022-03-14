@@ -11,15 +11,20 @@
             [clojure.pprint :as pp]
             [clojure.data.json :as json]
             [clojure.data.csv :as csv]
+            [clojure.set :as set]
+            [clojure.java.jdbc :as jdbc]
+;            [nrepl.server :refer [start-server stop-server]]
             [clojure.java.io :as io]))
-   
+
+;(defonce repl-server (start-server :port 12223))   
    
 (def entries [{"id" 0
                "time" "20190102-1231"
                "operator" ["mr"]
                "changes" ["overlap" "windowcleanin" "flashlamps" "laserhv" "shgthg"]
                "ndfilters" {1 3.2}
-               "comment" " "}])
+               "comment" " dumb_comment"
+               "_last_changed" 5}])
 
 (defn load-config []
  (json/read-str (slurp "config.json")))
@@ -63,13 +68,15 @@
 (defn decode-from-json [elem]
   (into {} (for [[k v] elem] [k (if (= k "ndfilters") (keys-to-int v) v)])))
 
+(defn replace-escape [l]
+  (string/replace l #"\"" ""))
 
 (defn csv-data->maps [csv-data]
-  ; (println (map str (first csv-data)))
+  ; (println "csv-data header" (first csv-data))
+  ; (pr "csv-data header" (first csv-data))
   (map zipmap
-    (repeat (first csv-data)) ;; First row is the header
+    (repeat (mapv replace-escape (first csv-data))) ;; First row is the header
     (map convert-entry (rest csv-data))))
-
 
 (defn load-entries [filename]
   (with-open [reader (io/reader filename)]
@@ -81,18 +88,87 @@
   :headers {"Content-Type" "application/json"}
   :body    (json/write-str (get (load-config) "channels"))})
 
+
+; some database stuff
+(def db
+  {:classname   "org.sqlite.JDBC"
+   :subprotocol "sqlite"
+   :subname     (get (load-config) "dbfilename")
+   })
+
+(defn create-db
+  "create db and table"
+  []
+  (println "create the database " db)
+  (try (jdbc/db-do-commands db 
+          (jdbc/create-table-ddl :logbook
+            [;[:timestamp :datetime :default :current_timestamp]
+             [:combid :text :unique]
+             [:id :int]
+             [:time :text]
+             [:operator :text]
+             [:changes :text]
+             [:ndfilters :text]
+             [:comment :text]
+             [:_last_changed :int]
+             [:deleted :int]]))
+       (catch Exception e
+         (println (.getMessage e)))))
+
+(defn prep-entry-database "doc" [e]
+  ;(println (get e "id") (get e "_last_changed"))
+  ;(println (str (get e "id") "_" (get e "_last_changed")))
+  (assoc e :combid (str (get e "id") "_" (get e "_last_changed")))
+)
+
+(defn in? "true if coll contains elm" [coll elm]  
+  (some #(= elm %) coll))
+
+(defn write-into-db "doc" [entries]
+  (let [db-entr-cids (mapv #(:combid %) (jdbc/query db ["SELECT combid from logbook"]))
+        all-entr (mapv prep-entry-database entries)
+        new-entr (filter #(not (in? db-entr-cids (% :combid))) all-entr)]
+    ;(println "db-entr-cids " db-entr-cids)
+    ;(println "new-entr " new-entr)
+    ;(jdbc/execute! db ["DELETE FROM fruit WHERE grade < ?" 25.0])
+    (jdbc/insert-multi! db :logbook new-entr)
+    )
+)
+
+(defn mark-deleted-db "doc" [entries]
+  (let [db-entr-cids (mapv #(:combid %) (jdbc/query db ["SELECT combid from logbook WHERE deleted IS NULL"]))
+        all-entr (mapv prep-entry-database entries)
+        ;new-entr (filter #(not (in? db-entr-cids (% :combid))) all-entr)
+        current-time (quot (System/currentTimeMillis) 1000)
+        del-entr (set/difference (set db-entr-cids) (set (mapv #(:combid %) all-entr)))]
+        ;del-entr (set/difference (set db-entr-cids) (set all-entr))]
+    ;(println "new-entr " new-entr)
+    (println "delete " del-entr)
+    ;(jdbc/execute! db ["DELETE FROM fruit WHERE grade < ?" 25.0])
+    (doseq [c del-entr]
+      (jdbc/update! db :logbook {:deleted current-time} ["combid = ?" c]))
+    )
+)
+; enough of databases 
+
+
 (defn list-entries [req]
   (pp/pprint req)
   ;(println "load entries" (load-entries logbookfilename))
+  (let [entries (load-entries logbookfilename)]
+    ;(pr "entries at list" entries)
+    (write-into-db entries)
   {:status  200
    :headers {"Content-Type" "application/json"}
-   :body    (json/write-str (load-entries logbookfilename))})
-
+   :body    (json/write-str entries)}))
 
 (defn update-entries [rep]
   (let [entries (sort-by #(get % "time") #(compare %2 %1) (mapv decode-from-json (:body rep)))]
+    (print "!!! update entries")
     (pp/pprint entries)
-    (save-entries logbookfilename entries))
+    (save-entries logbookfilename entries)
+    (write-into-db entries)
+    (mark-deleted-db entries))
   {:status  200
    :headers {"Content-Type" "application/json"}
    :body    (json/write-str {"sucess" true})})
@@ -115,11 +191,11 @@
   [& args]
   (let [config (load-config)
         port (Integer/parseInt (or (str (get config "port")) "31514"))] 
+   (println (get config "dbfilename") (.exists (io/file (get config "dbfilename")))
+   (if-not (.exists (io/file (get config "dbfilename"))) (create-db))
    (server/run-server app {:port port})
    (println (str "Running webserver at http:/127.0.0.1:" port "/"))
    (browse/browse-url (str "http://localhost:" port))))
-  
-(+ 5 2)
 
 (comment
  (use 'pollylog.core :reload))

@@ -1,6 +1,7 @@
 (ns pollylogbrowser.core
   (:require
    [reagent.core :as reagent]
+   [reagent.dom :as rdom]
   ;  [cljs.core.async :as async]
    [ajax.core :as ajax]
    [clojure.string :as string]
@@ -20,6 +21,7 @@
 (defonce app-state
   (reagent/atom {:ed-visible false
                  :status "none"
+                 :error false
                  :dispentry 40
                  :entry-mod {"time" "20121213-0144"
                              "id" 5
@@ -45,6 +47,9 @@
    "31514"
    (second (re-find #":(\d+)" js/window.location.host))))
 
+;(defn get-port []
+;   "31514")
+
 ; (async/go (let [response (async/<! (http/get "http://localhost:8080/entries" {:as :json :with-credentials? false}))]
 ;             (prn (:status response))
 ;             (prn (:body response))))
@@ -52,14 +57,19 @@
   ;(swap! app-state assoc :all-pieces pcs)
 
 (defn http-error-handler [{:keys [status status-text]}]
-  (ant/notification-error {:message "Error" :duration 0 :description "while fetching data, have a look into the terminal and report to polly (at) tropos.de"})
+  (if-not (get @app-state :error)
+  (ant/notification-error {:message "Error during save" :duration 0 :description "Changes will be lost. Is the backend (terminal with .bat) still running?"}))
+  (swap! app-state assoc-in [:error] true)
+  (swap! app-state assoc-in [:status] "error")
   (.log js/console (str "Error occured: " status " " status-text)))
 
-(defn new-empty-entry [] 
- {"id" (inc (or (apply max (keys (get @app-state :entries))) 0))
+(defn new-empty-entry "template for a new empty entry" [] 
+  ; new approach for unique ids: current unix timestamp
+ {"id" (-> (js/moment) (.utc) (.unix) (int))
   "time" (-> (js/moment) (.utc) (.format "YYYYMMDD-HHmm"))
   "operator" [] "changes" [] "ndfilters" {}
-  "comment" ""})
+  "comment" ""
+  "_last_changed" (-> (js/moment) (.utc) (.unix) (int))})
 
 
 (defn keys-to-int [hashmap]
@@ -84,6 +94,7 @@
 (defn fetch-handler [data]
   ; (println "data" data)
   (swap! app-state assoc-in [:entries] (map-from-vector (mapv remove-escapes data)))
+  (swap! app-state assoc-in [:error] false)
   (swap! app-state assoc-in [:status] "pull finished"))
 
 
@@ -94,12 +105,15 @@
     :handler fetch-handler :error-handler http-error-handler}))
 
 (fetch-entries)
+; regularly fetch entries to detect early when server fails
+(js/setInterval fetch-entries (* 45 60 1000))
 
 (defn push-to-backend []
   (swap! app-state assoc-in [:status] "pushing...")
   (ajax/POST (str "http://localhost:" (get-port) "/entries")
    {:params  (clj->js (vals (get @app-state :entries)))
     :handler #(do (js/console.log "post sucessful")(swap! app-state assoc-in [:status] "push finished"))
+    :error-handler http-error-handler
     :format :json})
  (js/console.log "pushing to backend"))
  
@@ -123,12 +137,14 @@
 (defn del-entry-builder [id]
   (fn []
     (swap! app-state assoc-in [:entries] (dissoc (get @app-state :entries) id))
+    (push-to-backend)
    (js/console.log "deleted id" id)))
 
 
 (defn save []
   (let [entry-mod (get-in @app-state [:entry-mod])]
    (swap! app-state assoc-in [:entries (get entry-mod "id")] entry-mod)
+   (swap! app-state assoc-in [:entries (get entry-mod "id") "_last_changed"] (-> (js/moment) (.utc) (.unix) (int)))
    (swap! app-state assoc-in [:ed-visible] false)
    (push-to-backend)))
    
@@ -277,12 +293,12 @@
         ;[ant/button {:on-click #(reset! modal1 true)} "list corresp. nodes"]
        
 
-(defn inc-disp []
+(defn inc-disp "show more entries" []
   ;(swap! a update-in [(keyword id) :counter] inc))
   ;(swap! app-state assoc-in [:dispentry] 300)
   (swap! app-state update-in [:dispentry] #(+ % 50)))
 
-(defn dec-disp []
+(defn dec-disp "show less entries" []
   (swap! app-state update-in [:dispentry] #(- % 50)))
 
 (defn disp-more 
@@ -302,12 +318,13 @@
 (defn footer 
   "footer with the link, version and transmit status"
   []
-  [:div.footer [:div.footer-left "by martin-rdz  -  visit  " [:a {:href "http://polly.tropos.de"} "polly.tropos.de"] "  pollylog v0.1.5"] 
+  [:div.footer [:div.footer-left "by martin-rdz  -  visit  " [:a {:href "http://polly.tropos.de"} "polly.tropos.de"] 
+                  "  -  " [:a {:href "https://github.com/PollyNET/pollylog"} "pollylog"] " v0.1.6"] 
     [:div.footer-right {:on-click push-to-backend} "status: " (get @app-state :status)]])
 
 (defn page []
-  [:div
-    [:h1.myheader "polly logbook"]
+  [:div#root {:class (if (get @app-state :error) "error" "fine")}
+    [:h1 {:class ["myheader" (if (get @app-state :error) "error" "fine")]} "polly logbook"]
     [editor]
     [list-entries]
     [disp-more]
@@ -326,7 +343,7 @@
     
 
 (defn reload []
-  (reagent/render (fn [] [page])
+  (rdom/render (fn [] [page])
                   (.getElementById js/document "app")))
 
 (defn ^:export main []

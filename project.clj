@@ -1,24 +1,26 @@
-(defproject pollylog "0.1.5"
+(defproject pollylog "0.1.6"
   :description "fixed format logbook for pollyxt lidars"
   :url "http://polly.tropos.de"
   :license {:name "MIT"
             :url "https://opensource.org/licenses/MIT"}
-  :dependencies [[org.clojure/clojure "1.8.0"]
+  :dependencies [[org.clojure/clojure "1.10.3"]
                  [ring-cors "0.1.12"]
-                 [ring/ring-json "0.4.0"]
-                 [http-kit "2.3.0"]
+                 [ring/ring-json "0.5.0"]
+                 [http-kit "2.5.3"]
                  [compojure "1.6.1"]
                  [cider/cider-nrepl "0.17.0"] ; maybe necessary to show hints
-                 [org.clojure/data.json "0.2.6"]
-                 [org.clojure/data.csv "0.1.4"]
+                 [org.clojure/data.json "2.4.0"]
+                 [org.clojure/data.csv "1.0.0"]
+                 [org.clojure/java.jdbc "0.7.12"]
+                 [org.xerial/sqlite-jdbc "3.36.0.1"]
                  ;[clj-toml "0.3.1"]
                  ;frontend stuff
-                 [org.clojure/clojurescript "1.9.946"]
-                 [reagent "0.7.0"]
-                 [antizer "0.3.1"]
-                 [funcool/cuerdas "2.0.5"]                 
-                 [cljs-http/cljs-http "0.1.45"]
-                 [cljs-ajax "0.8.0"]]
+                 [org.clojure/clojurescript "1.11.4"]
+                 [reagent "1.1.0"]
+                 [antizer "0.3.1"] ; has to be the old version, a newer messes up some buttons
+                 [funcool/cuerdas "2.2.1"]                 
+                 [cljs-http/cljs-http "0.1.46"]
+                 [cljs-ajax "0.8.4"]]
   :main ^:skip-aot pollylog.core
   :target-path "target/%s"
 

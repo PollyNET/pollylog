@@ -11,9 +11,17 @@ h1.myheader {
     font: 20px sans-serif;
     font-weight: 900;
     text-align: center;
-    color: springgreen;
+    color: rgb(54, 179, 116);
+    /*background-color: white;*/
 }
 
+#root {
+    padding-bottom: 30px;
+}
+
+.error {
+    background-color: rgb(163, 0, 0);
+}
 
 #editor {
     width: 65%;
@@ -72,8 +80,10 @@ div.footer {
     min-width: 900px;
     font-size: 10px;
     color: grey;
+    background-color: white;
     margin-top: 5px;
-    padding-bottom: 35px;
+    /*margin-bottom: 35px;*/
+    padding-bottom: 15px;
 }
 
 .footer-left {
