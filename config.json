@@ -1,6 +1,5 @@
 {"port": 31514,
     
- "__logbookfilename": "pollylog_production/logbook_pollylacros.csv",
  "logbookfilename": "pollylog_production/logbook_example.csv",
  "dbfilename": "pollylog_production/logbook_example.db",
 
@@ -8,6 +7,6 @@
     "1":"355", "2":"355c", "3":"387", "4":"407",
     "5":"532", "6":"532c", "7":"607", "8":"1064",
     "9":"532NR", "10":"607NR", "11":"355NR", "12":"378NR", "13":"532NRc",
-    "14":"1064c", "15":"1058", "16":"1064NR"
+    "14":"ch14", "15":"ch15", "16":"ch16", "17":"ch17", "18":"ch18"
  }
 }

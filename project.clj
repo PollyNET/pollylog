@@ -1,4 +1,4 @@
-(defproject pollylog "0.1.6"
+(defproject pollylog "0.1.7"
   :description "fixed format logbook for pollyxt lidars"
   :url "http://polly.tropos.de"
   :license {:name "MIT"

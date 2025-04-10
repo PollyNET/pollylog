@@ -194,8 +194,8 @@
    (println (get config "dbfilename") (.exists (io/file (get config "dbfilename")))
    (if-not (.exists (io/file (get config "dbfilename"))) (create-db))
    (server/run-server app {:port port})
-   (println (str "Running webserver at http:/127.0.0.1:" port "/"))
-   (browse/browse-url (str "http://localhost:" port))))
+   (println (str "Running webserver at http://127.0.0.1:" port "/"))
+   (browse/browse-url (str "http://localhost:" port)))))
 
 (comment
  (use 'pollylog.core :reload))

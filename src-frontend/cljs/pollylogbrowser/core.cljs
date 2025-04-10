@@ -140,9 +140,13 @@
     (push-to-backend)
    (js/console.log "deleted id" id)))
 
+(defn to-float-od [entry-mod]
+  (assoc-in entry-mod ["ndfilters"] (into {} (map (fn [x] [(first x) (cstr/parse-double (second x))]) (get entry-mod "ndfilters"))))
+)
+
 
 (defn save []
-  (let [entry-mod (get-in @app-state [:entry-mod])]
+  (let [entry-mod (to-float-od (get-in @app-state [:entry-mod]))]
    (swap! app-state assoc-in [:entries (get entry-mod "id")] entry-mod)
    (swap! app-state assoc-in [:entries (get entry-mod "id") "_last_changed"] (-> (js/moment) (.utc) (.unix) (int)))
    (swap! app-state assoc-in [:ed-visible] false)
@@ -204,8 +208,13 @@
 
 (defn parse-number-nan [str]
  (if (> (count str) 0)
-   (cstr/parse-number str)
+   (cstr/parse-double str)
    nil))
+
+(defn fix-comma [str]
+ (println str)
+ (string/replace str "," ".")
+)
 
 (defn update-or-remove-nd-filters [path no]
   (fn [value]
@@ -222,26 +231,44 @@
       no "   " [:b (get-in @app-state [:channels no])] ":  "
       [ant/input {:size "small" :style {:width "40px" :text-align "right"} 
                   :value (get-in @app-state [:entry-mod "ndfilters" no]) 
-                  :onChange #((update-or-remove-nd-filters [:entry-mod "ndfilters"] no) (js->clj (parse-number-nan (.. % -target -value))))}]]
+                  :onChange #((update-or-remove-nd-filters [:entry-mod "ndfilters"] no) (fix-comma (js->clj (.. % -target -value))))}]]
      [:td ""])))
 
 (defn make-filter-table 
   "make the table with the filter edit fields"
   []
   (fn []
-   (if (< (count (get @app-state :channels)) 14)
-    [:table [:thead] 
+   (let [nchannel (count (get @app-state :channels))]
+   ;(if (< (count (get @app-state :channels)) 14)
+   (cond
+    (< nchannel 14) [:table [:thead] 
       [:tbody
      ;[:tr (for [no (range 1 5)] ^{:key no} (if (contains? (get @app-state :channels) no) [nd-entry no] [:td]))]
        [:tr (for [no (range 1 5)] ^{:key no} [nd-entry no])]
        [:tr (for [no (range 5 9)] ^{:key no} [nd-entry no])]
        [:tr (for [no (range 9 14)] ^{:key no} [nd-entry no])]]]
-    [:table [:thead] 
+    (< nchannel 17) [:table [:thead] 
       [:tbody
        [:tr (for [no (range 1 5)] ^{:key no} [nd-entry no])]
        [:tr (for [no (range 5 9)] ^{:key no} [nd-entry no])]
        [:tr (for [no (range 9 13)] ^{:key no} [nd-entry no])]
-       [:tr (for [no (range 13 17)] ^{:key no} [nd-entry no])]]])))
+       [:tr (for [no (range 13 17)] ^{:key no} [nd-entry no])]]]
+    (< nchannel 21) [:table [:thead] 
+      [:tbody
+       [:tr (for [no (range 1 5)] ^{:key no} [nd-entry no])]
+       [:tr (for [no (range 5 9)] ^{:key no} [nd-entry no])]
+       [:tr (for [no (range 9 13)] ^{:key no} [nd-entry no])]
+       [:tr (for [no (range 13 17)] ^{:key no} [nd-entry no])]
+       [:tr (for [no (range 17 21)] ^{:key no} [nd-entry no])]]]
+    (< nchannel 25) [:table [:thead] 
+      [:tbody
+       [:tr (for [no (range 1 5)] ^{:key no} [nd-entry no])]
+       [:tr (for [no (range 5 9)] ^{:key no} [nd-entry no])]
+       [:tr (for [no (range 9 13)] ^{:key no} [nd-entry no])]
+       [:tr (for [no (range 13 17)] ^{:key no} [nd-entry no])]
+       [:tr (for [no (range 17 21)] ^{:key no} [nd-entry no])]
+       [:tr (for [no (range 21 25)] ^{:key no} [nd-entry no])]]]
+       ))))
      
     
 (defn editor 
@@ -319,7 +346,7 @@
   "footer with the link, version and transmit status"
   []
   [:div.footer [:div.footer-left "by martin-rdz  -  visit  " [:a {:href "http://polly.tropos.de"} "polly.tropos.de"] 
-                  "  -  " [:a {:href "https://github.com/PollyNET/pollylog"} "pollylog"] " v0.1.6"] 
+                  "  -  " [:a {:href "https://github.com/PollyNET/pollylog"} "pollylog"] " v0.1.7"] 
     [:div.footer-right {:on-click push-to-backend} "status: " (get @app-state :status)]])
 
 (defn page []
