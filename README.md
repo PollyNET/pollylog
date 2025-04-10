@@ -20,9 +20,10 @@ Following an update it might be necessary to clear the cache of the local browse
 1. Get the `pollylog_*.zip` from the releases page.
 2. End the running process by closing the terminal window.
 3. Place the `start.bat` and the `pollylog-*.jar` into your pollylog folder (the only thing that changes in the `.bat` is the version number).
-4. Do **not** change the `config.json`, if the channels, output file or port have not changed. 
-5. Run the `start.bat`. The name of the new `.jar` file should show up in the first line in the terminal.
-6. Reload the page in the browser, sometimes a hard-refresh (`Ctrl+F5`) is required. The version number is displayed on the bottom left of the page.
+4. Do not change the `config.json`, if the channels, output file or port have not changed.
+    **Exception**: When updating to [v0.1.6](https://github.com/PollyNET/pollylog/releases/tag/v0.1.6) the `"dbfilename": "logbook_example.db"` needs to be specified additionally to the `"logbookfilename": "logbook_example.csv"`
+6. Run the `start.bat`. The name of the new `.jar` file should show up in the first line in the terminal.
+7. Reload the page in the browser, sometimes a hard-refresh (`Ctrl+F5`) is required. The version number is displayed on the bottom left of the page.
 
 ![pollylog screenshot](./example.jpg)
 
